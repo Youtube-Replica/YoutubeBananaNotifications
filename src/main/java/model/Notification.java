@@ -13,32 +13,32 @@ import org.json.simple.JSONObject;
 
 import java.util.Map;
 
-public class Search {
+public class Notification {
 
     static ArangoDB arangoDB;
-    static Search instance = new Search();
-    static String dbName = "scalable";
+    static Notification instance = new Notification();
+    static String dbName = "subscriptions";
 
-    private Search(){
+    private Notification(){
         arangoDB = new ArangoDB.Builder().build();
     }
 
-    public static Search getInstance(){
-        return Search.instance;
+    public static Notification getInstance(){
+        return Notification.instance;
     }
 
     public void setDB(int i){
         arangoDB = new ArangoDB.Builder().maxConnections(i).build();
     }
 
-    //Search for Videos by title and for Channel by name
+    //Notification for Videos by title and for Channel by name
     public static String getSearch(String s) {
         //First get by channel name
         JSONObject searchObjectTotal = new JSONObject();
 
-            String query = "FOR doc IN channel\n" +
-                   // "        FILTER doc.`Name` == @value\n" +
-                    "        FILTER CONTAINS(doc.info.name, @value)" +
+            String query = "FOR doc IN Comments\n" +
+                    "        FILTER doc.video_id == @value\n" +
+//                    "        FILTER CONTAINS(doc.video_id, @value)" +
                     "        RETURN doc";
             Map<String, Object> bindVars = new MapBuilder().put("value", s).get();
 
@@ -49,31 +49,26 @@ public class Search {
                 JSONArray searchArray = new JSONArray();
                 int id = 0;
                 for (; cursor.hasNext(); ) {
-                    JSONObject searchObjectM = new JSONObject();
+                    JSONObject commentObjectM = new JSONObject();
                     cursor2 = cursor.next();
                     try {
-                        BaseDocument myDocument2 = arangoDB.db(dbName).collection("channel").getDocument(cursor2.getKey(),
+                        BaseDocument myDocument = arangoDB.db(dbName).collection("Comments").getDocument(cursor2.getKey(),
                                 BaseDocument.class);
                         id = Integer.parseInt(cursor2.getKey());
-                        searchObjectM.put("channel_id", id);
-                        searchObjectM.put("info", myDocument2.getAttribute("info"));
-                        searchObjectM.put("subscriptions", myDocument2.getAttribute("subscriptions"));
-                        searchObjectM.put("watched_videos", myDocument2.getAttribute("watched_videos"));
-                        searchObjectM.put("blocked_channels", myDocument2.getAttribute("blocked_channels"));
-                        searchObjectM.put("notifications", myDocument2.getAttribute("notifications"));
-                        searchArray.add(searchObjectM);
+                        commentObjectM.put("Text",myDocument.getAttribute("text"));
+                        searchArray.add(commentObjectM);
                     } catch (ArangoDBException e) {
                         Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> Failed to get document: myKey; " + e.getMessage(), CharsetUtil.UTF_8));
                         System.err.println("Failed to get document: myKey; " + e.getMessage());
                     }
                 }
-                searchObjectTotal.put("channels", searchArray);
+                searchObjectTotal.put("Comments", searchArray);
             }
 
                 JSONArray searchArray = new JSONArray();
-                query = "FOR doc IN video\n" +
+                query = "FOR doc IN firstSubscription\n" +
                        // "        FILTER doc.`title` like @value\n" +
-                        "        FILTER CONTAINS(doc.title, @value)" +
+                        "        FILTER CONTAINS(doc.ID, @value)" +
                         "        RETURN doc";
                 bindVars = new MapBuilder().put("value", s).get();
 
@@ -88,25 +83,11 @@ public class Search {
                         System.out.println(cursor2.getKey());
                         JSONObject searchObjectM = new JSONObject();
                         try{
-                        BaseDocument myDocument2 = arangoDB.db(dbName).collection("video").getDocument(cursor2.getKey(),
+                        BaseDocument myDocument2 = arangoDB.db(dbName).collection("firstSubscription").getDocument(cursor2.getKey(),
                                 BaseDocument.class);
                         id= Integer.parseInt(cursor2.getKey());
 
-                        searchObjectM.put("VideoID",id);
-                        searchObjectM.put("ChannelID",myDocument2.getAttribute("channel_id"));
-                        searchObjectM.put("Likes",myDocument2.getAttribute("likes"));
-                        searchObjectM.put("Dislikes",myDocument2.getAttribute("dislikes"));
-                        searchObjectM.put("Views",myDocument2.getAttribute("views"));
-                        searchObjectM.put("Title",myDocument2.getAttribute("title"));
-                        searchObjectM.put("Category",myDocument2.getAttribute("category"));
-                        searchObjectM.put("Duration",myDocument2.getAttribute("duration"));
-                        searchObjectM.put("Description",myDocument2.getAttribute("description"));
-                        searchObjectM.put("Qualities",myDocument2.getAttribute("qualities"));
-                        searchObjectM.put("Private",myDocument2.getAttribute("private"));
-                        searchObjectM.put("url",myDocument2.getAttribute("url"));
-                        searchObjectM.put("Date_Created",myDocument2.getAttribute("date_created"));
-                        searchObjectM.put("Date_Modified",myDocument2.getAttribute("date_modified"));
-
+                        searchObjectM.put("ID",id);
 
                         searchArray.add(searchObjectM);
                     } catch (ArangoDBException e) {
@@ -114,14 +95,14 @@ public class Search {
                         System.err.println("Failed to get document: myKey; " + e.getMessage());
                      }
                     }
-                    searchObjectTotal.put("videos",searchArray);
+                    searchObjectTotal.put("subscriptions",searchArray);
                 }
                 else{
                     Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> No entry by that name " + s, CharsetUtil.UTF_8));
                     searchObjectTotal.put("No Entry by the name ",s);
                 }
 
-        System.out.println("Search Object" + searchObjectTotal.toString());
+        System.out.println("Notification Object" + searchObjectTotal.toString());
         return searchObjectTotal.toString();
     }
 

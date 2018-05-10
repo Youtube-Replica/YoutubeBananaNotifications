@@ -1,8 +1,7 @@
 package commands;
 
 
-import commands.Command;
-import model.Search;
+import model.Notification;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
@@ -13,7 +12,7 @@ import org.json.simple.parser.ParseException;
 import java.io.IOException;
 import java.util.HashMap;
 
-public class RetrieveSearch extends Command {
+public class RetrieveNotification extends Command {
    public static String search_string = "";
    public void execute() {
        HashMap<String, Object> props = parameters;
@@ -33,7 +32,7 @@ public class RetrieveSearch extends Command {
        AMQP.BasicProperties properties = (AMQP.BasicProperties) props.get("properties");
        AMQP.BasicProperties replyProps = (AMQP.BasicProperties) props.get("replyProps");
        Envelope envelope = (Envelope) props.get("envelope");
-       String response = Search.getSearch(search_string); //Gets channels searched for
+       String response = Notification.getSearch(search_string); //Gets channels searched for
        try {
            channel.basicPublish("", properties.getReplyTo(), replyProps, response.getBytes("UTF-8"));
            channel.basicAck(envelope.getDeliveryTag(), false);

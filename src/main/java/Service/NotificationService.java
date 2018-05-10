@@ -2,11 +2,10 @@ package Service;
 
 import Client.Client;
 import commands.Command;
-import commands.RetrieveSearch;
 import com.rabbitmq.client.*;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
-import model.Search;
+import model.Notification;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -17,8 +16,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 
-public class SearchService extends ServiceInterface{
-    private static final String RPC_QUEUE_NAME = "search-request";
+public class NotificationService extends ServiceInterface{
+    private static final String RPC_QUEUE_NAME = "notification-request";
 
     public void run() {
 
@@ -36,7 +35,7 @@ public class SearchService extends ServiceInterface{
 
             channel.basicQos(1);
 
-            Client.Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Information> [x] Awaiting RPC requests ", CharsetUtil.UTF_8));
+//            Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Information> [x] Awaiting RPC requests ", CharsetUtil.UTF_8));
             System.out.println(" [x] Awaiting RPC requests");
 
             Consumer consumer = new DefaultConsumer(channel) {
@@ -46,7 +45,7 @@ public class SearchService extends ServiceInterface{
                             .Builder()
                             .correlationId(properties.getCorrelationId())
                             .build();
-                    Client.Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Information> Responding to corrID: "+ properties.getCorrelationId(), CharsetUtil.UTF_8));
+                    Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Information> Responding to corrID: "+ properties.getCorrelationId(), CharsetUtil.UTF_8));
                     System.out.println("Responding to corrID: "+ properties.getCorrelationId());
 
                     String response = "";
@@ -64,19 +63,19 @@ public class SearchService extends ServiceInterface{
                         cmd.init(props);
                         executor.submit(cmd);
                     }catch (RuntimeException e) {
-                        Client.Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> Runtime " + e.getMessage(), CharsetUtil.UTF_8));
+                        Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> Runtime " + e.getMessage(), CharsetUtil.UTF_8));
                         System.out.println(" [.] " + e.toString());
                     } catch (IllegalAccessException e) {
-                        Client.Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> IllegalAccessException " + e.getMessage(), CharsetUtil.UTF_8));
+                        Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> IllegalAccessException " + e.getMessage(), CharsetUtil.UTF_8));
                         e.printStackTrace();
                     } catch (ParseException e) {
-                        Client.Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> ParseException " + e.getMessage(), CharsetUtil.UTF_8));
+                        Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> ParseException " + e.getMessage(), CharsetUtil.UTF_8));
                         e.printStackTrace();
                     } catch (InstantiationException e) {
-                        Client.Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> InstantiationException " + e.getMessage(), CharsetUtil.UTF_8));
+                        Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> InstantiationException " + e.getMessage(), CharsetUtil.UTF_8));
                         e.printStackTrace();
                     } catch (ClassNotFoundException e) {
-                        Client.Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> ClassNotFoundException " + e.getMessage(), CharsetUtil.UTF_8));
+                        Client.serverChannel.writeAndFlush(Unpooled.copiedBuffer("Error> ClassNotFoundException " + e.getMessage(), CharsetUtil.UTF_8));
                         e.printStackTrace();
                     } finally {
                         synchronized (this) {
@@ -102,6 +101,6 @@ public class SearchService extends ServiceInterface{
 
 
     public void setDB(int dbCount) {
-        Search.getInstance().setDB(dbCount);
+        Notification.getInstance().setDB(dbCount);
     }
 }
